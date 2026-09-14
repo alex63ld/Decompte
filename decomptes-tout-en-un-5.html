@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Décomptes</title>
+<style>
+  :root{
+    --bg:#0B1220;
+    --panel:#121B2E;
+    --line:#233252;
+    --ink:#E8EEF7;
+    --dim:#7C8CA8;
+    --c-year:#F2A65A;
+    --c-vac:#6FD1A0;
+    --c-sun:#8FA6F2;
+    --c-wknd:#F2708A;
+    --c-stage:#5ED0D0;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:radial-gradient(circle at 50% 0%, #16223B 0%, var(--bg) 55%);
+    color:var(--ink);
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height:100vh;
+    padding:24px 16px 60px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .wrap{
+    width:100%;
+    max-width:440px;
+  }
+  .tabs{
+    display:flex;
+    gap:6px;
+    overflow-x:auto;
+    padding-bottom:4px;
+    margin-bottom:20px;
+    scrollbar-width:none;
+  }
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{
+    flex:0 0 auto;
+    padding:9px 14px;
+    border-radius:20px;
+    border:1px solid var(--line);
+    background:var(--panel);
+    color:var(--dim);
+    font-size:13px;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .tab.active{
+    color:#08101F;
+    border-color:transparent;
+    font-weight:600;
+  }
+  .tab[data-tab="year"].active{background:var(--c-year);}
+  .tab[data-tab="vac"].active{background:var(--c-vac);}
+  .tab[data-tab="sun"].active{background:var(--c-sun);}
+  .tab[data-tab="wknd"].active{background:var(--c-wknd);}
+  .tab[data-tab="stage"].active{background:var(--c-stage);}
+
+  .card{
+    display:none;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:18px;
+    padding:32px 28px 28px;
+  }
+  .card.active{display:block;}
+
+  .eyebrow{font-size:13px;color:var(--dim);margin:0 0 4px;}
+  h1{font-size:20px;margin:0 0 24px;font-weight:600;}
+
+  .value{
+    font-family:'Courier New', ui-monospace, monospace;
+    font-size:64px;
+    font-weight:700;
+    line-height:1;
+    margin:0;
+  }
+  .unit{font-size:15px;color:var(--dim);margin:6px 0 28px;}
+
+  .toggle{
+    display:flex;
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    margin-bottom:22px;
+  }
+  .toggle button{
+    flex:1;
+    padding:10px 0;
+    background:transparent;
+    border:none;
+    color:var(--dim);
+    font-size:14px;
+    cursor:pointer;
+  }
+
+  .field{margin-bottom:4px;}
+  label{display:block;font-size:12px;color:var(--dim);margin-bottom:6px;}
+  input[type="date"], input[type="datetime-local"]{
+    width:100%;
+    background:#0D1626;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 12px;
+    color:var(--ink);
+    font-size:14px;
+  }
+  .hint{font-size:12px;color:var(--dim);margin-top:14px;}
+  .done{color:#7CD98A;}
+
+  .grid3{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+    margin-bottom:24px;
+  }
+  .unit-box{
+    text-align:center;
+    background:#0D1626;
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:14px 4px;
+  }
+  .unit-box .num{
+    font-family:'Courier New', ui-monospace, monospace;
+    font-size:32px;
+    font-weight:700;
+    color:var(--c-wknd);
+    line-height:1;
+  }
+  .unit-box .lbl{font-size:11px;color:var(--dim);margin-top:6px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" data-tab="year">Fin d'année</button>
+    <button class="tab" data-tab="vac">Vacances</button>
+    <button class="tab" data-tab="sun">Dimanches</button>
+    <button class="tab" data-tab="wknd">Week-end parents</button>
+    <button class="tab" data-tab="stage">Stage</button>
+  </div>
+
+  <!-- 1. Fin d'année -->
+  <div class="card active" id="card-year">
+    <p class="eyebrow">Année scolaire 2026–2027</p>
+    <h1>Décompte avant la fin</h1>
+    <p class="value" id="year-value" style="color:var(--c-year)">–</p>
+    <p class="unit" id="year-unit">chargement…</p>
+    <div class="toggle">
+      <button id="year-btnDays" class="active" style="background:var(--c-year);color:#1A1206;">Jours</button>
+      <button id="year-btnWeeks">Semaines</button>
+    </div>
+    <div class="field">
+      <label for="year-date">Date de fin d'année</label>
+      <input type="date" id="year-date">
+    </div>
+  </div>
+
+  <!-- 2. Vacances -->
+  <div class="card" id="card-vac">
+    <p class="eyebrow">Prochaines vacances</p>
+    <h1>Décompte avant le départ</h1>
+    <p class="value" id="vac-value" style="color:var(--c-vac)">–</p>
+    <p class="unit" id="vac-unit">renseigne une date</p>
+    <div class="toggle">
+      <button id="vac-btnDays" class="active" style="background:var(--c-vac);color:#08210F;">Jours</button>
+      <button id="vac-btnWeeks">Semaines</button>
+    </div>
+    <div class="field">
+      <label for="vac-date">Date de début des vacances</label>
+      <input type="date" id="vac-date">
+    </div>
+  </div>
+
+  <!-- 3. Dimanches -->
+  <div class="card" id="card-sun">
+    <p class="eyebrow">Année scolaire 2026–2027</p>
+    <h1>Dimanches restants</h1>
+    <p class="value" id="sun-value" style="color:var(--c-sun)">–</p>
+    <p class="unit" id="sun-unit">chargement…</p>
+    <div class="field">
+      <label for="sun-date">Date de fin d'année</label>
+      <input type="date" id="sun-date">
+    </div>
+  </div>
+
+  <!-- 4. Week-end parents -->
+  <div class="card" id="card-wknd">
+    <p class="eyebrow">Prochain aller-retour</p>
+    <h1>Avant de rentrer chez tes parents</h1>
+    <div class="grid3">
+      <div class="unit-box"><div class="num" id="wknd-d">–</div><div class="lbl">jours</div></div>
+      <div class="unit-box"><div class="num" id="wknd-h">–</div><div class="lbl">heures</div></div>
+      <div class="unit-box"><div class="num" id="wknd-m">–</div><div class="lbl">minutes</div></div>
+    </div>
+    <div class="field">
+      <label for="wknd-date">Départ (jour et heure)</label>
+      <input type="datetime-local" id="wknd-date">
+    </div>
+    <p class="hint" id="wknd-status">Renseigne la date et l'heure de départ pour ce week-end.</p>
+  </div>
+
+  <!-- 5. Stage -->
+  <div class="card" id="card-stage">
+    <p class="eyebrow">Stage</p>
+    <h1>Décompte avant le début du stage</h1>
+    <p class="value" id="stage-value" style="color:var(--c-stage)">–</p>
+    <p class="unit" id="stage-unit">renseigne une date</p>
+    <div class="toggle">
+      <button id="stage-btnDays" class="active" style="background:var(--c-stage);color:#062121;">Jours</button>
+      <button id="stage-btnWeeks">Semaines</button>
+    </div>
+    <div class="field">
+      <label for="stage-date">Date de début du stage</label>
+      <input type="date" id="stage-date">
+    </div>
+  </div>
+</div>
+
+<script>
+  // ---------- Tabs ----------
+  const tabs = document.querySelectorAll('.tab');
+  const cards = document.querySelectorAll('.card');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      tabs.forEach(t => t.classList.remove('active'));
+      cards.forEach(c => c.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById('card-' + tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  // ---------- Helpers ----------
+  function daysWeeksToggle(prefix, colorActive, colorText, getTargetDate, doneMsg){
+    let mode = 'days';
+    const btnDays = document.getElementById(prefix + '-btnDays');
+    const btnWeeks = document.getElementById(prefix + '-btnWeeks');
+    const valueEl = document.getElementById(prefix + '-value');
+    const unitEl = document.getElementById(prefix + '-unit');
+
+    function paintToggle(){
+      btnDays.style.background = mode === 'days' ? colorActive : 'transparent';
+      btnDays.style.color = mode === 'days' ? colorText : 'var(--dim)';
+      btnWeeks.style.background = mode === 'weeks' ? colorActive : 'transparent';
+      btnWeeks.style.color = mode === 'weeks' ? colorText : 'var(--dim)';
+    }
+    function setMode(m){ mode = m; paintToggle(); render(); }
+    btnDays.addEventListener('click', () => setMode('days'));
+    btnWeeks.addEventListener('click', () => setMode('weeks'));
+
+    function render(){
+      const target = getTargetDate();
+      if (!target){
+        valueEl.textContent = '–';
+        unitEl.textContent = 'renseigne une date';
+        return;
+      }
+      const now = new Date();
+      const diffMs = target - now;
+      if (diffMs <= 0){
+        valueEl.textContent = '0';
+        unitEl.textContent = doneMsg;
+        return;
+      }
+      const days = Math.ceil(diffMs / 86400000);
+      if (mode === 'days'){
+        valueEl.textContent = days;
+        unitEl.textContent = days > 1 ? 'jours restants' : 'jour restant';
+      } else {
+        const weeks = Math.ceil(days / 7);
+        valueEl.textContent = weeks;
+        unitEl.textContent = weeks > 1 ? 'semaines restantes' : 'semaine restante';
+      }
+    }
+    paintToggle();
+    return render;
+  }
+
+  // ---------- 1. Fin d'année ----------
+  const yearDateInput = document.getElementById('year-date');
+  yearDateInput.value = "2027-06-30"; // valeur par défaut, à ajuster si besoin
+  const renderYear = daysWeeksToggle('year', '#F2A65A', '#1A1206',
+    () => yearDateInput.value ? new Date(yearDateInput.value + 'T00:00:00') : null,
+    "l'année scolaire est terminée");
+  yearDateInput.addEventListener('change', renderYear);
+  renderYear();
+
+  // ---------- 2. Vacances ----------
+  const vacDateInput = document.getElementById('vac-date');
+  const renderVac = daysWeeksToggle('vac', '#6FD1A0', '#08210F',
+    () => vacDateInput.value ? new Date(vacDateInput.value + 'T00:00:00') : null,
+    "les vacances sont arrivées");
+  vacDateInput.addEventListener('change', renderVac);
+  renderVac();
+
+  // ---------- 3. Dimanches ----------
+  const sunDateInput = document.getElementById('sun-date');
+  sunDateInput.value = "2027-06-30"; // même valeur par défaut que la fin d'année
+  const sunValueEl = document.getElementById('sun-value');
+  const sunUnitEl = document.getElementById('sun-unit');
+  function countSundays(from, to){
+    let count = 0;
+    let d = new Date(from);
+    d.setHours(0,0,0,0);
+    while (d <= to){
+      if (d.getDay() === 0) count++;
+      d.setDate(d.getDate() + 1);
+    }
+    return count;
+  }
+  function renderSun(){
+    const target = new Date(sunDateInput.value + 'T00:00:00');
+    const now = new Date();
+    now.setHours(0,0,0,0);
+    if (target <= now){
+      sunValueEl.textContent = '0';
+      sunUnitEl.textContent = "l'année scolaire est terminée";
+      return;
+    }
+    const n = countSundays(now, target);
+    sunValueEl.textContent = n;
+    sunUnitEl.textContent = n > 1 ? 'dimanches restants' : 'dimanche restant';
+  }
+  sunDateInput.addEventListener('change', renderSun);
+  renderSun();
+
+  // ---------- 4. Week-end parents ----------
+  const wkndInput = document.getElementById('wknd-date');
+  const wD = document.getElementById('wknd-d');
+  const wH = document.getElementById('wknd-h');
+  const wM = document.getElementById('wknd-m');
+  const wStatus = document.getElementById('wknd-status');
+  function renderWknd(){
+    if (!wkndInput.value){
+      wD.textContent = wH.textContent = wM.textContent = '–';
+      wStatus.textContent = "Renseigne la date et l'heure de départ pour ce week-end.";
+      return;
+    }
+    const target = new Date(wkndInput.value);
+    const now = new Date();
+    const diffMs = target - now;
+    if (diffMs <= 0){
+      wD.textContent = wH.textContent = wM.textContent = '0';
+      wStatus.textContent = "C'est le moment de partir !";
+      return;
+    }
+    const totalMinutes = Math.floor(diffMs / 60000);
+    wD.textContent = Math.floor(totalMinutes / 1440);
+    wH.textContent = Math.floor((totalMinutes % 1440) / 60);
+    wM.textContent = totalMinutes % 60;
+    wStatus.textContent = 'Temps restant avant le départ.';
+  }
+  wkndInput.addEventListener('change', renderWknd);
+  renderWknd();
+
+  // ---------- 5. Stage ----------
+  const stageDateInput = document.getElementById('stage-date');
+  const renderStage = daysWeeksToggle('stage', '#5ED0D0', '#062121',
+    () => stageDateInput.value ? new Date(stageDateInput.value + 'T00:00:00') : null,
+    "le stage a commencé");
+  stageDateInput.addEventListener('change', renderStage);
+  renderStage();
+
+  // ---------- Refresh loop ----------
+  setInterval(() => {
+    renderYear(); renderVac(); renderSun(); renderStage();
+  }, 60000);
+  setInterval(renderWknd, 1000);
+</script>
+</body>
+</html>
